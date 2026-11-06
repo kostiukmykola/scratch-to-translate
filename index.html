@@ -1,0 +1,644 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scratch to Translate</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+  background: #f4f2ec;
+  color: #252525;
+}
+
+header {
+  text-align: center;
+  padding: 30px 15px 10px;
+}
+
+h1 {
+  font-size: clamp(26px, 4vw, 42px);
+  margin: 0 0 10px;
+}
+
+header p {
+  color: #777;
+  font-size: 16px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: center;
+  margin: 20px;
+}
+
+button {
+  border: none;
+  background: #292929;
+  color: white;
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #555;
+}
+
+#board {
+  max-width: 1200px;
+  min-height: 570px;
+  margin: 20px auto 50px;
+  padding: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
+  gap: 35px;
+}
+
+.card {
+  position: relative;
+  width: 210px;
+  height: 125px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 5px 18px #00000012;
+  overflow: hidden;
+  transform: rotate(var(--rotation));
+  transition: transform .2s, box-shadow .2s;
+}
+
+.card:hover {
+  transform: rotate(0deg) scale(1.06);
+  box-shadow: 0 9px 25px #00000025;
+  z-index: 2;
+}
+
+.translation {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  font-weight: bold;
+  color: #285d86;
+  overflow-wrap: anywhere;
+}
+
+.suffix {
+  color: #e47738;
+}
+
+canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.hint {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin-bottom: 30px;
+}
+
+@media (max-width: 600px) {
+  #board {
+    padding: 15px;
+    gap: 20px;
+  }
+
+  .card {
+    width: 155px;
+    height: 105px;
+  }
+
+  .translation {
+    font-size: 18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Scratch to Translate</h1>
+  <p>Scratch the surface to discover the English translation!</p>
+</header>
+
+<div class="toolbar">
+  <button onclick="newRound()">New words ↻</button>
+</div>
+
+<main id="board"></main>
+
+<div class="hint">
+  Scratch the card to reveal the translation.
+  Release the mouse to start the 5-second timer!
+</div>
+
+<script>
+
+const words = [
+  ["Конституція", "Constitution"],
+  ["Інформація", "Information"],
+  ["Комунікація", "Communication"],
+  ["Організація", "Organization"],
+  ["Адміністрація", "Administration"],
+  ["Асоціація", "Association"],
+  ["Адаптація", "Adaptation"],
+  ["Активація", "Activation"],
+  ["Актуалізація", "Actualization"],
+  ["Анімація", "Animation"],
+  ["Апробація", "Approbation"],
+  ["Апроксимація", "Approximation"],
+  ["Артикуляція", "Articulation"],
+  ["Валідація", "Validation"],
+  ["Вентиляція", "Ventilation"],
+  ["Вібрація", "Vibration"],
+  ["Гравітація", "Gravitation"],
+  ["Декларація", "Declaration"],
+  ["Демонстрація", "Demonstration"],
+  ["Дискусія", "Discussion"],
+  ["Дистанція", "Distance"],
+  ["Дистрибуція", "Distribution"],
+  ["Еволюція", "Evolution"],
+  ["Експлуатація", "Exploitation"],
+  ["Експозиція", "Exposition"],
+  ["Експресія", "Expression"],
+  ["Екстракція", "Extraction"],
+  ["Еміграція", "Emigration"],
+  ["Емуляція", "Emulation"],
+  ["Ідентифікація", "Identification"],
+  ["Ілюстрація", "Illustration"],
+  ["Імітація", "Imitation"],
+  ["Імплементація", "Implementation"],
+  ["Імпровізація", "Improvisation"],
+  ["Інтеграція", "Integration"],
+  ["Інтерпретація", "Interpretation"],
+  ["Інтонація", "Intonation"],
+  ["Інфляція", "Inflation"],
+  ["Класифікація", "Classification"],
+  ["Колаборація", "Collaboration"],
+  ["Колекція", "Collection"],
+  ["Комбінація", "Combination"],
+  ["Компенсація", "Compensation"],
+  ["Композиція", "Composition"],
+  ["Концентрація", "Concentration"],
+  ["Координація", "Coordination"],
+  ["Модифікація", "Modification"],
+  ["Мотивація", "Motivation"]
+];
+
+function shuffle(array) {
+  const result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+function createCard(ukrainian, english) {
+
+  const card = document.createElement("div");
+  card.className = "card";
+
+  card.style.setProperty(
+    "--rotation",
+    (Math.random() * 8 - 4) + "deg"
+  );
+
+  const translation = document.createElement("div");
+  translation.className = "translation";
+
+  translation.innerHTML =
+    english.slice(0, -"tion".length) +
+    '<span class="suffix">tion</span>';
+
+  const canvas = document.createElement("canvas");
+
+  card.appendChild(translation);
+  card.appendChild(canvas);
+
+  const ctx = canvas.getContext("2d");
+
+  let timer = null;
+  let drawing = false;
+  let lastPoint = null;
+  let animationId = null;
+  let originalCover = null;
+  let currentDpr = 1;
+
+  const BRUSH_SIZE = 38;
+  const BRUSH_SPACING = 3;
+  const RESTORE_DURATION = 800;
+
+  // Draw and save the original cover
+  function drawCover() {
+
+    const rect = card.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) {
+      return false;
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+
+    const width = Math.max(1, Math.round(rect.width * dpr));
+    const height = Math.max(1, Math.round(rect.height * dpr));
+
+    currentDpr = dpr;
+
+    // Set canvas dimensions
+    canvas.width = width;
+    canvas.height = height;
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+
+    // Background
+    ctx.fillStyle = "#d8d5cc";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    // Scratch texture
+    ctx.strokeStyle = "#c4c0b5";
+    ctx.lineWidth = 1;
+
+    for (let i = 0; i < 40; i++) {
+
+      const x = Math.random() * rect.width;
+      const y = Math.random() * rect.height;
+
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 10, y + 5);
+      ctx.stroke();
+    }
+
+    // Ukrainian word
+    const prefix = ukrainian.slice(0, -"ція".length);
+    const suffix = "ція";
+
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+
+    const prefixWidth = ctx.measureText(prefix).width;
+    const suffixWidth = ctx.measureText(suffix).width;
+
+    const totalWidth = prefixWidth + suffixWidth;
+    const startX = (rect.width - totalWidth) / 2;
+    const centerY = rect.height / 2;
+
+    ctx.fillStyle = "#292929";
+    ctx.fillText(prefix, startX, centerY);
+
+    ctx.fillStyle = "#e47738";
+    ctx.fillText(suffix, startX + prefixWidth, centerY);
+
+    // Save exact original cover
+    originalCover = document.createElement("canvas");
+    originalCover.width = width;
+    originalCover.height = height;
+
+    originalCover
+      .getContext("2d")
+      .drawImage(canvas, 0, 0);
+
+    return true;
+  }
+
+  // Restore original cover smoothly
+  function restoreCover() {
+
+    cancelAnimationFrame(animationId);
+    animationId = null;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Safety check
+    if (
+      !originalCover ||
+      originalCover.width <= 0 ||
+      originalCover.height <= 0 ||
+      width <= 0 ||
+      height <= 0
+    ) {
+      drawCover();
+      return;
+    }
+
+    // Save current scratched state
+    const scratchedCanvas = document.createElement("canvas");
+
+    scratchedCanvas.width = width;
+    scratchedCanvas.height = height;
+
+    scratchedCanvas
+      .getContext("2d")
+      .drawImage(canvas, 0, 0);
+
+    // Use the original, unchanged cover
+    const fullCover = originalCover;
+
+    // Animation
+    const start = performance.now();
+
+    function animate(now) {
+
+      const progress = Math.min(
+        (now - start) / RESTORE_DURATION,
+        1
+      );
+
+      // Ease-out
+      const eased = 1 - Math.pow(1 - progress, 3);
+
+      // Use physical pixel coordinates during animation
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+
+      ctx.clearRect(0, 0, width, height);
+
+      // Scratched state underneath
+      ctx.drawImage(scratchedCanvas, 0, 0);
+
+      // Gradually reveal original cover
+      ctx.globalAlpha = eased;
+
+      ctx.drawImage(
+        fullCover,
+        0, 0,
+        width, height
+      );
+
+      ctx.globalAlpha = 1;
+
+      if (progress < 1) {
+
+        animationId = requestAnimationFrame(animate);
+
+      } else {
+
+        // Final exact restoration
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.drawImage(
+          fullCover,
+          0, 0,
+          width, height
+        );
+
+        // Restore coordinate system for scratching
+        ctx.setTransform(
+          currentDpr, 0,
+          0, currentDpr,
+          0, 0
+        );
+
+        animationId = null;
+      }
+    }
+
+    animationId = requestAnimationFrame(animate);
+  }
+
+  // Smooth continuous erasing
+  function eraseLine(from, to) {
+
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    ctx.save();
+
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = BRUSH_SIZE;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    if (distance < 0.01) {
+
+      ctx.beginPath();
+      ctx.arc(
+        from.x,
+        from.y,
+        BRUSH_SIZE / 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+
+    } else {
+
+      const steps = Math.max(
+        1,
+        Math.ceil(distance / BRUSH_SPACING)
+      );
+
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+
+      for (let i = 1; i <= steps; i++) {
+
+        const t = i / steps;
+
+        ctx.lineTo(
+          from.x + dx * t,
+          from.y + dy * t
+        );
+      }
+
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  // Convert pointer coordinates into canvas CSS coordinates
+  function getPosition(e) {
+
+    const rect = canvas.getBoundingClientRect();
+
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+  }
+
+  function pointerDown(e) {
+
+    if (e.button !== undefined && e.button !== 0) {
+      return;
+    }
+
+    e.preventDefault();
+
+    // Cancel previous timer
+    clearTimeout(timer);
+
+    // Cancel ongoing restoration
+    cancelAnimationFrame(animationId);
+    animationId = null;
+
+    // Restore normal canvas coordinate system
+    ctx.setTransform(
+      currentDpr, 0,
+      0, currentDpr,
+      0, 0
+    );
+
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+
+    drawing = true;
+    lastPoint = getPosition(e);
+
+    canvas.setPointerCapture(e.pointerId);
+
+    // Start erasing immediately
+    eraseLine(lastPoint, lastPoint);
+  }
+
+  function pointerMove(e) {
+
+    if (!drawing) return;
+
+    e.preventDefault();
+
+    // Use all available intermediate pointer positions
+    const events = e.getCoalescedEvents
+      ? e.getCoalescedEvents()
+      : [e];
+
+    for (const event of events) {
+
+      const currentPoint = getPosition(event);
+
+      eraseLine(lastPoint, currentPoint);
+
+      lastPoint = currentPoint;
+    }
+  }
+
+  function pointerUp(e) {
+
+    if (!drawing) return;
+
+    drawing = false;
+    lastPoint = null;
+
+    // Start the 5-second timer after releasing the mouse
+    timer = setTimeout(() => {
+      restoreCover();
+    }, 3000);
+  }
+
+  canvas.addEventListener("pointerdown", pointerDown);
+  canvas.addEventListener("pointermove", pointerMove);
+  canvas.addEventListener("pointerup", pointerUp);
+  canvas.addEventListener("pointercancel", pointerUp);
+
+  // Observe actual card dimensions
+  const observer = new ResizeObserver(() => {
+
+    if (!card.isConnected) return;
+
+    const rect = card.getBoundingClientRect();
+
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    const expectedWidth = Math.round(
+      rect.width * (window.devicePixelRatio || 1)
+    );
+
+    const expectedHeight = Math.round(
+      rect.height * (window.devicePixelRatio || 1)
+    );
+
+    // Only redraw when actual canvas dimensions change
+    if (
+      canvas.width !== expectedWidth ||
+      canvas.height !== expectedHeight
+    ) {
+
+      clearTimeout(timer);
+      cancelAnimationFrame(animationId);
+
+      animationId = null;
+      drawing = false;
+      lastPoint = null;
+
+      drawCover();
+    }
+  });
+
+  observer.observe(card);
+
+  // Initialize only after card is attached to the document
+  card.initialize = function() {
+    drawCover();
+  };
+
+  return card;
+}
+
+// Generate a new round
+function newRound() {
+
+  const board = document.getElementById("board");
+
+  board.innerHTML = "";
+
+  // Select 9 random words
+  const selected = shuffle(words).slice(0, 9);
+
+  selected.forEach(([uk, en]) => {
+
+    const card = createCard(uk, en);
+
+    // First attach the card to the page
+    board.appendChild(card);
+
+    // Then initialize its canvas
+    card.initialize();
+  });
+}
+
+// Start
+newRound();
+
+</script>
+
+</body>
+</html>
