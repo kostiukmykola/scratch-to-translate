@@ -2,651 +2,844 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scratch to Translate</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f4f2ec">
+  <title>Scratch to Translate</title>
 
-<style>
-* {
-  box-sizing: border-box;
-}
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: Arial, sans-serif;
-  background: #f4f2ec;
-  color: #252525;
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, sans-serif;
+      background: #f4f2ec;
+      color: #252525;
+    }
 
-header {
-  text-align: center;
-  padding: 30px 15px 10px;
-}
+    header {
+      text-align: center;
+      padding: 30px 15px 10px;
+    }
 
-h1 {
-  font-size: clamp(26px, 4vw, 42px);
-  margin: 0 0 10px;
-}
+    h1 {
+      font-size: clamp(26px, 4vw, 42px);
+      margin: 0 0 10px;
+    }
 
-header p {
-  color: #777;
-  font-size: 16px;
-}
+    header p {
+      color: #777;
+      font-size: 16px;
+      margin: 0;
+    }
 
-.toolbar {
-  display: flex;
-  justify-content: center;
-  margin: 20px;
-}
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      margin: 20px 15px 10px;
+    }
 
-button {
-  border: none;
-  background: #292929;
-  color: white;
-  padding: 12px 22px;
-  border-radius: 8px;
-  font-size: 15px;
-  cursor: pointer;
-}
+    button {
+      border: none;
+      background: #292929;
+      color: white;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background .2s;
+    }
 
-button:hover {
-  background: #555;
-}
+    button:hover {
+      background: #555;
+    }
 
-#board {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
-  justify-content: center;
-  align-content: center;
-  align-items: center;
-  gap: 35px;
-  width: 100%;
-  max-width: 1100px;
-  margin: 0 auto;
-}
+    button:focus-visible {
+      outline: 3px solid #e47738;
+      outline-offset: 3px;
+    }
 
-@media (max-width: 750px) {
-  #board {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+    #board {
+      --columns: 3;
 
-@media (max-width: 480px) {
-  #board {
-    grid-template-columns: 1fr;
-  }
-}
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+      gap: clamp(18px, 3vw, 35px);
 
-.card {
-  position: relative;
-  width: 210px;
-  height: 125px;
-  flex-shrink: 0;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 5px 18px #00000012;
-  overflow: hidden;
-  transform: rotate(var(--rotation));
-  transition: transform .2s, box-shadow .2s;
-}
+      width: min(100%, 900px);
+      margin: 0 auto;
+      padding: 20px 15px 40px;
 
-.card:hover {
-  transform: rotate(0deg) scale(1.06);
-  box-shadow: 0 9px 25px #00000025;
-  z-index: 2;
-}
+      justify-content: center;
+      align-content: center;
+      justify-items: center;
+    }
 
-.translation {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  text-align: center;
-  font-family: Arial, sans-serif;
-  font-size: 20px;
-  font-weight: bold;
-  color: #285d86;
-  overflow-wrap: anywhere;
-}
+    .card {
+      position: relative;
+      width: min(100%, 230px);
+      aspect-ratio: 1.68;
+      border-radius: 12px;
+      background: white;
+      box-shadow: 0 5px 18px #00000012;
+      overflow: hidden;
 
-.suffix {
-  color: #e47738;
-}
+      transform: rotate(var(--rotation));
+      transition: transform .2s, box-shadow .2s;
+    }
 
-canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  cursor: crosshair;
-  touch-action: none;
-}
+    .card:hover {
+      transform: rotate(0deg) scale(1.06);
+      box-shadow: 0 9px 25px #00000025;
+      z-index: 2;
+    }
 
-.hint {
-  text-align: center;
-  color: #999;
-  font-size: 13px;
-  margin-bottom: 30px;
-}
+    .translation {
+      position: absolute;
+      inset: 0;
 
-@media (max-width: 600px) {
-  #board {
-    padding: 15px;
-    gap: 20px;
-  }
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
 
-  .card {
-    width: 155px;
-    height: 105px;
-  }
+      padding: 12px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 20px;
+      font-weight: bold;
+      color: #285d86;
+      overflow-wrap: anywhere;
+    }
 
-  .translation {
-    font-size: 18px;
-  }
-}
-</style>
+    .suffix {
+      color: #e47738;
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    @media (max-width: 480px) {
+      header {
+        padding-top: 22px;
+      }
+
+      header p {
+        font-size: 14px;
+      }
+
+      #board {
+        padding: 15px 15px 30px;
+        gap: 20px;
+      }
+
+      .card {
+        width: min(100%, 210px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card,
+      button {
+        transition: none;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
-<header>
-  <h1>Scratch to Translate</h1>
-  <p>Scratch the surface to discover the English translation!</p>
-</header>
+  <header>
+    <h1>Scratch to Translate</h1>
+    <p>Scratch the surface to discover the English translation!</p>
+  </header>
 
-<div class="toolbar">
-  <button onclick="newRound()">New words ↻</button>
-</div>
+  <div class="toolbar">
+    <button id="newRoundButton" type="button">
+      New words ↻
+    </button>
+  </div>
 
-<main id="board"></main>
+  <main id="board" aria-label="Vocabulary cards"></main>
 
-<script>
+  <script>
+    const words = [
+      ["Конституція", "Constitution"],
+      ["Інформація", "Information"],
+      ["Комунікація", "Communication"],
+      ["Організація", "Organization"],
+      ["Адміністрація", "Administration"],
+      ["Асоціація", "Association"],
+      ["Адаптація", "Adaptation"],
+      ["Активація", "Activation"],
+      ["Актуалізація", "Actualization"],
+      ["Анімація", "Animation"],
+      ["Апробація", "Approbation"],
+      ["Апроксимація", "Approximation"],
+      ["Артикуляція", "Articulation"],
+      ["Валідація", "Validation"],
+      ["Вентиляція", "Ventilation"],
+      ["Вібрація", "Vibration"],
+      ["Гравітація", "Gravitation"],
+      ["Декларація", "Declaration"],
+      ["Демонстрація", "Demonstration"],
+      ["Дискусія", "Discussion"],
+      ["Дистанція", "Distance"],
+      ["Дистрибуція", "Distribution"],
+      ["Еволюція", "Evolution"],
+      ["Експлуатація", "Exploitation"],
+      ["Експозиція", "Exposition"],
+      ["Експресія", "Expression"],
+      ["Екстракція", "Extraction"],
+      ["Еміграція", "Emigration"],
+      ["Емуляція", "Emulation"],
+      ["Ідентифікація", "Identification"],
+      ["Ілюстрація", "Illustration"],
+      ["Імітація", "Imitation"],
+      ["Імплементація", "Implementation"],
+      ["Імпровізація", "Improvisation"],
+      ["Інтеграція", "Integration"],
+      ["Інтерпретація", "Interpretation"],
+      ["Інтонація", "Intonation"],
+      ["Інфляція", "Inflation"],
+      ["Класифікація", "Classification"],
+      ["Колаборація", "Collaboration"],
+      ["Колекція", "Collection"],
+      ["Комбінація", "Combination"],
+      ["Компенсація", "Compensation"],
+      ["Композиція", "Composition"],
+      ["Концентрація", "Concentration"],
+      ["Координація", "Coordination"],
+      ["Модифікація", "Modification"],
+      ["Мотивація", "Motivation"]
+    ];
 
-const words = [
-  ["Конституція", "Constitution"],
-  ["Інформація", "Information"],
-  ["Комунікація", "Communication"],
-  ["Організація", "Organization"],
-  ["Адміністрація", "Administration"],
-  ["Асоціація", "Association"],
-  ["Адаптація", "Adaptation"],
-  ["Активація", "Activation"],
-  ["Актуалізація", "Actualization"],
-  ["Анімація", "Animation"],
-  ["Апробація", "Approbation"],
-  ["Апроксимація", "Approximation"],
-  ["Артикуляція", "Articulation"],
-  ["Валідація", "Validation"],
-  ["Вентиляція", "Ventilation"],
-  ["Вібрація", "Vibration"],
-  ["Гравітація", "Gravitation"],
-  ["Декларація", "Declaration"],
-  ["Демонстрація", "Demonstration"],
-  ["Дискусія", "Discussion"],
-  ["Дистанція", "Distance"],
-  ["Дистрибуція", "Distribution"],
-  ["Еволюція", "Evolution"],
-  ["Експлуатація", "Exploitation"],
-  ["Експозиція", "Exposition"],
-  ["Експресія", "Expression"],
-  ["Екстракція", "Extraction"],
-  ["Еміграція", "Emigration"],
-  ["Емуляція", "Emulation"],
-  ["Ідентифікація", "Identification"],
-  ["Ілюстрація", "Illustration"],
-  ["Імітація", "Imitation"],
-  ["Імплементація", "Implementation"],
-  ["Імпровізація", "Improvisation"],
-  ["Інтеграція", "Integration"],
-  ["Інтерпретація", "Interpretation"],
-  ["Інтонація", "Intonation"],
-  ["Інфляція", "Inflation"],
-  ["Класифікація", "Classification"],
-  ["Колаборація", "Collaboration"],
-  ["Колекція", "Collection"],
-  ["Комбінація", "Combination"],
-  ["Компенсація", "Compensation"],
-  ["Композиція", "Composition"],
-  ["Концентрація", "Concentration"],
-  ["Координація", "Coordination"],
-  ["Модифікація", "Modification"],
-  ["Мотивація", "Motivation"]
-];
+    const board = document.getElementById("board");
+    const newRoundButton = document.getElementById("newRoundButton");
 
-function shuffle(array) {
-  const result = [...array];
+    const BRUSH_SIZE = 38;
+    const BRUSH_SPACING = 5;
+    const RESTORE_DURATION = 800;
+    const RESTORE_DELAY = 3000;
 
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
+    let selectedWords = [];
+    let currentColumns = 0;
+    let resizeFrame = null;
 
-  return result;
-}
+    // Fisher-Yates shuffle
+    function shuffle(array) {
+      const result = [...array];
 
-function createCard(ukrainian, english) {
+      for (let i = result.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [result[i], result[j]] = [result[j], result[i]];
+      }
 
-  const card = document.createElement("div");
-  card.className = "card";
-
-  card.style.setProperty(
-    "--rotation",
-    (Math.random() * 8 - 4) + "deg"
-  );
-
-  const translation = document.createElement("div");
-  translation.className = "translation";
-
-  translation.innerHTML =
-    english.slice(0, -"tion".length) +
-    '<span class="suffix">tion</span>';
-
-  const canvas = document.createElement("canvas");
-
-  card.appendChild(translation);
-  card.appendChild(canvas);
-
-  const ctx = canvas.getContext("2d");
-
-  let timer = null;
-  let drawing = false;
-  let lastPoint = null;
-  let animationId = null;
-  let originalCover = null;
-  let currentDpr = 1;
-
-  const BRUSH_SIZE = 38;
-  const BRUSH_SPACING = 3;
-  const RESTORE_DURATION = 800;
-
-  // Draw and save the original cover
-  function drawCover() {
-
-    const rect = card.getBoundingClientRect();
-
-    if (rect.width <= 0 || rect.height <= 0) {
-      return false;
+      return result;
     }
 
-    const dpr = window.devicePixelRatio || 1;
-
-    const width = Math.max(1, Math.round(rect.width * dpr));
-    const height = Math.max(1, Math.round(rect.height * dpr));
-
-    currentDpr = dpr;
-
-    // Set canvas dimensions
-    canvas.width = width;
-    canvas.height = height;
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-
-    // Background
-    ctx.fillStyle = "#d8d5cc";
-    ctx.fillRect(0, 0, rect.width, rect.height);
-
-    // Scratch texture
-    ctx.strokeStyle = "#c4c0b5";
-    ctx.lineWidth = 1;
-
-    for (let i = 0; i < 40; i++) {
-
-      const x = Math.random() * rect.width;
-      const y = Math.random() * rect.height;
-
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + 10, y + 5);
-      ctx.stroke();
+    // Number of columns depends on screen width
+    function getColumnCount() {
+      if (window.innerWidth <= 480) return 1;
+      if (window.innerWidth <= 750) return 2;
+      return 3;
     }
 
-    // Ukrainian word
-    const prefix = ukrainian.slice(0, -"ція".length);
-    const suffix = "ція";
+    // Create English translation
+    function createTranslation(english) {
+      const translation = document.createElement("div");
+      translation.className = "translation";
 
-    ctx.font = "bold 20px Arial";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
+      if (english.toLowerCase().endsWith("tion")) {
+        const prefix = english.slice(0, -4);
 
-    const prefixWidth = ctx.measureText(prefix).width;
-    const suffixWidth = ctx.measureText(suffix).width;
-
-    const totalWidth = prefixWidth + suffixWidth;
-    const startX = (rect.width - totalWidth) / 2;
-    const centerY = rect.height / 2;
-
-    ctx.fillStyle = "#292929";
-    ctx.fillText(prefix, startX, centerY);
-
-    ctx.fillStyle = "#e47738";
-    ctx.fillText(suffix, startX + prefixWidth, centerY);
-
-    // Save exact original cover
-    originalCover = document.createElement("canvas");
-    originalCover.width = width;
-    originalCover.height = height;
-
-    originalCover
-      .getContext("2d")
-      .drawImage(canvas, 0, 0);
-
-    return true;
-  }
-
-  // Restore original cover smoothly
-  function restoreCover() {
-
-    cancelAnimationFrame(animationId);
-    animationId = null;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Safety check
-    if (
-      !originalCover ||
-      originalCover.width <= 0 ||
-      originalCover.height <= 0 ||
-      width <= 0 ||
-      height <= 0
-    ) {
-      drawCover();
-      return;
-    }
-
-    // Save current scratched state
-    const scratchedCanvas = document.createElement("canvas");
-
-    scratchedCanvas.width = width;
-    scratchedCanvas.height = height;
-
-    scratchedCanvas
-      .getContext("2d")
-      .drawImage(canvas, 0, 0);
-
-    // Use the original, unchanged cover
-    const fullCover = originalCover;
-
-    // Animation
-    const start = performance.now();
-
-    function animate(now) {
-
-      const progress = Math.min(
-        (now - start) / RESTORE_DURATION,
-        1
-      );
-
-      // Ease-out
-      const eased = 1 - Math.pow(1 - progress, 3);
-
-      // Use physical pixel coordinates during animation
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      ctx.globalCompositeOperation = "source-over";
-      ctx.globalAlpha = 1;
-
-      ctx.clearRect(0, 0, width, height);
-
-      // Scratched state underneath
-      ctx.drawImage(scratchedCanvas, 0, 0);
-
-      // Gradually reveal original cover
-      ctx.globalAlpha = eased;
-
-      ctx.drawImage(
-        fullCover,
-        0, 0,
-        width, height
-      );
-
-      ctx.globalAlpha = 1;
-
-      if (progress < 1) {
-
-        animationId = requestAnimationFrame(animate);
-
-      } else {
-
-        // Final exact restoration
-        ctx.clearRect(0, 0, width, height);
-
-        ctx.drawImage(
-          fullCover,
-          0, 0,
-          width, height
+        translation.appendChild(
+          document.createTextNode(prefix)
         );
 
-        // Restore coordinate system for scratching
+        const suffix = document.createElement("span");
+        suffix.className = "suffix";
+        suffix.textContent = "tion";
+
+        translation.appendChild(suffix);
+      } else {
+        translation.textContent = english;
+      }
+
+      return translation;
+    }
+
+    function createCard(ukrainian, english) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.style.setProperty(
+        "--rotation",
+        (Math.random() * 8 - 4) + "deg"
+      );
+
+      card.setAttribute(
+        "aria-label",
+        `${ukrainian}: ${english}`
+      );
+
+      const translation = createTranslation(english);
+
+      const canvas = document.createElement("canvas");
+      canvas.setAttribute("role", "img");
+      canvas.setAttribute(
+        "aria-label",
+        `Scratch to reveal the English translation of ${ukrainian}`
+      );
+
+      card.appendChild(translation);
+      card.appendChild(canvas);
+
+      const ctx = canvas.getContext("2d");
+
+      let timer = null;
+      let drawing = false;
+      let lastPoint = null;
+      let activePointerId = null;
+      let animationId = null;
+      let originalCover = null;
+      let currentDpr = 1;
+      let destroyed = false;
+
+      // Draw the original cover
+      function drawCover() {
+        const widthCSS = card.clientWidth;
+        const heightCSS = card.clientHeight;
+
+        if (widthCSS <= 0 || heightCSS <= 0) {
+          return false;
+        }
+
+        const dpr = window.devicePixelRatio || 1;
+
+        const width = Math.max(1, Math.round(widthCSS * dpr));
+        const height = Math.max(1, Math.round(heightCSS * dpr));
+
+        currentDpr = dpr;
+
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.globalCompositeOperation = "source-over";
+        ctx.globalAlpha = 1;
+
+        // Background
+        ctx.fillStyle = "#d8d5cc";
+        ctx.fillRect(0, 0, widthCSS, heightCSS);
+
+        // Scratch texture
+        ctx.strokeStyle = "#c4c0b5";
+        ctx.lineWidth = 1;
+
+        for (let i = 0; i < 40; i++) {
+          const x = Math.random() * widthCSS;
+          const y = Math.random() * heightCSS;
+
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 10, y + 5);
+          ctx.stroke();
+        }
+
+        // Ukrainian word
+        const prefix = ukrainian.slice(0, -"ція".length);
+        const suffix = "ція";
+
+        let fontSize = 20;
+
+        ctx.font = `bold ${fontSize}px Arial`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+
+        let prefixWidth = ctx.measureText(prefix).width;
+        let suffixWidth = ctx.measureText(suffix).width;
+        let totalWidth = prefixWidth + suffixWidth;
+
+        // Reduce font if the word is too wide
+        if (totalWidth > widthCSS - 24) {
+          fontSize = Math.max(
+            14,
+            fontSize * (widthCSS - 24) / totalWidth
+          );
+
+          ctx.font = `bold ${fontSize}px Arial`;
+
+          prefixWidth = ctx.measureText(prefix).width;
+          suffixWidth = ctx.measureText(suffix).width;
+          totalWidth = prefixWidth + suffixWidth;
+        }
+
+        const startX = (widthCSS - totalWidth) / 2;
+        const centerY = heightCSS / 2;
+
+        ctx.fillStyle = "#292929";
+        ctx.fillText(prefix, startX, centerY);
+
+        ctx.fillStyle = "#e47738";
+        ctx.fillText(suffix, startX + prefixWidth, centerY);
+
+        // Save exact original cover
+        originalCover = document.createElement("canvas");
+        originalCover.width = width;
+        originalCover.height = height;
+
+        originalCover
+          .getContext("2d")
+          .drawImage(canvas, 0, 0);
+
+        return true;
+      }
+
+      // Restore original cover smoothly
+      function restoreCover() {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+
+        const width = canvas.width;
+        const height = canvas.height;
+
+        if (
+          !originalCover ||
+          originalCover.width <= 0 ||
+          originalCover.height <= 0 ||
+          width <= 0 ||
+          height <= 0
+        ) {
+          drawCover();
+          return;
+        }
+
+        const scratchedCanvas = document.createElement("canvas");
+        scratchedCanvas.width = width;
+        scratchedCanvas.height = height;
+
+        scratchedCanvas
+          .getContext("2d")
+          .drawImage(canvas, 0, 0);
+
+        const fullCover = originalCover;
+        const start = performance.now();
+
+        function animate(now) {
+          if (destroyed) return;
+
+          const progress = Math.min(
+            (now - start) / RESTORE_DURATION,
+            1
+          );
+
+          const eased = 1 - Math.pow(1 - progress, 3);
+
+          // Physical pixel coordinates during animation
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = 1;
+
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(scratchedCanvas, 0, 0);
+
+          ctx.globalAlpha = eased;
+          ctx.drawImage(fullCover, 0, 0, width, height);
+          ctx.globalAlpha = 1;
+
+          if (progress < 1) {
+            animationId = requestAnimationFrame(animate);
+          } else {
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(fullCover, 0, 0, width, height);
+
+            ctx.setTransform(
+              currentDpr, 0,
+              0, currentDpr,
+              0, 0
+            );
+
+            animationId = null;
+          }
+        }
+
+        animationId = requestAnimationFrame(animate);
+      }
+
+      // Schedule restoration
+      function scheduleRestore() {
+        clearTimeout(timer);
+
+        timer = setTimeout(() => {
+          restoreCover();
+        }, RESTORE_DELAY);
+      }
+
+      // Erase a continuous line
+      function eraseLine(from, to) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        ctx.save();
+
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.globalAlpha = 1;
+        ctx.lineWidth = BRUSH_SIZE;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+
+        if (distance < 0.01) {
+          ctx.beginPath();
+          ctx.arc(
+            from.x,
+            from.y,
+            BRUSH_SIZE / 2,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+        } else {
+          const steps = Math.max(
+            1,
+            Math.ceil(distance / BRUSH_SPACING)
+          );
+
+          ctx.beginPath();
+          ctx.moveTo(from.x, from.y);
+
+          for (let i = 1; i <= steps; i++) {
+            const t = i / steps;
+
+            ctx.lineTo(
+              from.x + dx * t,
+              from.y + dy * t
+            );
+          }
+
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      // Convert pointer coordinates into card-local coordinates.
+      // This also accounts for the card's rotation and hover scale.
+      function getPosition(e) {
+        const rect = card.getBoundingClientRect();
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+
+        const transform = getComputedStyle(card).transform;
+
+        if (transform && transform !== "none") {
+          try {
+            const matrix = new DOMMatrix(transform);
+            const point = matrix.inverse().transformPoint(
+              new DOMPoint(dx, dy)
+            );
+
+            return {
+              x: point.x + card.clientWidth / 2,
+              y: point.y + card.clientHeight / 2
+            };
+          } catch (error) {
+            // Fallback below
+          }
+        }
+
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      }
+
+      function pointerDown(e) {
+        if (destroyed || drawing || e.isPrimary === false) return;
+        if (e.button !== undefined && e.button !== 0) return;
+
+        e.preventDefault();
+
+        clearTimeout(timer);
+
+        cancelAnimationFrame(animationId);
+        animationId = null;
+
         ctx.setTransform(
           currentDpr, 0,
           0, currentDpr,
           0, 0
         );
 
-        animationId = null;
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = "source-over";
+
+        drawing = true;
+        activePointerId = e.pointerId;
+        lastPoint = getPosition(e);
+
+        canvas.setPointerCapture(e.pointerId);
+
+        eraseLine(lastPoint, lastPoint);
       }
+
+      function pointerMove(e) {
+        if (!drawing || destroyed) return;
+        if (e.pointerId !== activePointerId) return;
+
+        e.preventDefault();
+
+        const events = e.getCoalescedEvents
+          ? e.getCoalescedEvents()
+          : [e];
+
+        for (const event of events) {
+          const currentPoint = getPosition(event);
+
+          eraseLine(lastPoint, currentPoint);
+          lastPoint = currentPoint;
+        }
+      }
+
+      function pointerUp(e) {
+        if (!drawing || destroyed) return;
+        if (e.pointerId !== activePointerId) return;
+
+        drawing = false;
+        lastPoint = null;
+        activePointerId = null;
+
+        scheduleRestore();
+      }
+
+      function handleWindowBlur() {
+        if (!drawing || destroyed) return;
+
+        drawing = false;
+        lastPoint = null;
+
+        if (
+          activePointerId !== null &&
+          canvas.hasPointerCapture(activePointerId)
+        ) {
+          try {
+            canvas.releasePointerCapture(activePointerId);
+          } catch (error) {
+            // Pointer capture may already have been released
+          }
+        }
+
+        activePointerId = null;
+        scheduleRestore();
+      }
+
+      // Check if canvas needs resizing
+      function refreshCanvasSize() {
+        if (destroyed || !card.isConnected) return;
+
+        const widthCSS = card.clientWidth;
+        const heightCSS = card.clientHeight;
+
+        if (widthCSS <= 0 || heightCSS <= 0) return;
+
+        const dpr = window.devicePixelRatio || 1;
+
+        const expectedWidth = Math.round(widthCSS * dpr);
+        const expectedHeight = Math.round(heightCSS * dpr);
+
+        if (
+          canvas.width !== expectedWidth ||
+          canvas.height !== expectedHeight
+        ) {
+          clearTimeout(timer);
+          cancelAnimationFrame(animationId);
+
+          animationId = null;
+          drawing = false;
+          lastPoint = null;
+          activePointerId = null;
+
+          drawCover();
+        }
+      }
+
+      canvas.addEventListener("pointerdown", pointerDown);
+      canvas.addEventListener("pointermove", pointerMove);
+      canvas.addEventListener("pointerup", pointerUp);
+      canvas.addEventListener("pointercancel", pointerUp);
+
+      window.addEventListener("blur", handleWindowBlur);
+
+      const observer = new ResizeObserver(() => {
+        refreshCanvasSize();
+      });
+
+      observer.observe(card);
+
+      // Initialize after the card is attached to the document
+      card.initialize = function() {
+        drawCover();
+      };
+
+      // Clean up resources when the card is removed
+      card.destroy = function() {
+        destroyed = true;
+
+        clearTimeout(timer);
+        cancelAnimationFrame(animationId);
+
+        observer.disconnect();
+
+        window.removeEventListener("blur", handleWindowBlur);
+
+        canvas.removeEventListener("pointerdown", pointerDown);
+        canvas.removeEventListener("pointermove", pointerMove);
+        canvas.removeEventListener("pointerup", pointerUp);
+        canvas.removeEventListener("pointercancel", pointerUp);
+      };
+
+      card.refreshCanvasSize = refreshCanvasSize;
+
+      return card;
     }
 
-    animationId = requestAnimationFrame(animate);
-  }
+    // Remove existing cards and release their resources
+    function clearBoard() {
+      board.querySelectorAll(".card").forEach(card => {
+        if (card.destroy) {
+          card.destroy();
+        }
+      });
 
-  // Smooth continuous erasing
-  function eraseLine(from, to) {
+      board.innerHTML = "";
+    }
 
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
+    // Add or remove cards while preserving existing ones
+    function syncCardCount() {
+      const columns = getColumnCount();
+      const cardsCount = columns * 3;
 
-    const distance = Math.sqrt(dx * dx + dy * dy);
+      currentColumns = columns;
+      board.style.setProperty("--columns", columns);
 
-    ctx.save();
+      // Remove excess cards
+      while (selectedWords.length > cardsCount) {
+        const card = board.lastElementChild;
 
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = BRUSH_SIZE;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+        if (card && card.destroy) {
+          card.destroy();
+        }
 
-    if (distance < 0.01) {
+        if (card) {
+          card.remove();
+        }
 
-      ctx.beginPath();
-      ctx.arc(
-        from.x,
-        from.y,
-        BRUSH_SIZE / 2,
-        0,
-        Math.PI * 2
-      );
-      ctx.fill();
+        selectedWords.pop();
+      }
 
-    } else {
-
-      const steps = Math.max(
-        1,
-        Math.ceil(distance / BRUSH_SPACING)
-      );
-
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-
-      for (let i = 1; i <= steps; i++) {
-
-        const t = i / steps;
-
-        ctx.lineTo(
-          from.x + dx * t,
-          from.y + dy * t
+      // Add missing cards
+      if (selectedWords.length < cardsCount) {
+        const remainingWords = shuffle(
+          words.filter(word =>
+            !selectedWords.some(
+              selected => selected[0] === word[0]
+            )
+          )
         );
+
+        const missingCount = cardsCount - selectedWords.length;
+
+        const additionalWords = remainingWords.slice(
+          0,
+          missingCount
+        );
+
+        additionalWords.forEach(word => {
+          selectedWords.push(word);
+
+          const card = createCard(word[0], word[1]);
+
+          board.appendChild(card);
+          card.initialize();
+        });
       }
 
-      ctx.stroke();
+      // Update canvas if device pixel ratio or dimensions changed
+      board.querySelectorAll(".card").forEach(card => {
+        if (card.refreshCanvasSize) {
+          card.refreshCanvasSize();
+        }
+      });
     }
 
-    ctx.restore();
-  }
+    // Generate a new round
+    function newRound() {
+      clearBoard();
 
-  // Convert pointer coordinates into canvas CSS coordinates
-  function getPosition(e) {
+      const columns = getColumnCount();
+      const cardsCount = columns * 3;
 
-    const rect = canvas.getBoundingClientRect();
+      currentColumns = columns;
+      board.style.setProperty("--columns", columns);
 
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-  }
+      selectedWords = shuffle(words).slice(0, cardsCount);
 
-  function pointerDown(e) {
+      selectedWords.forEach(([uk, en]) => {
+        const card = createCard(uk, en);
 
-    if (e.button !== undefined && e.button !== 0) {
-      return;
+        board.appendChild(card);
+        card.initialize();
+      });
     }
 
-    e.preventDefault();
+    // Handle browser resizing
+    function handleResize() {
+      if (resizeFrame !== null) {
+        cancelAnimationFrame(resizeFrame);
+      }
 
-    // Cancel previous timer
-    clearTimeout(timer);
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = null;
 
-    // Cancel ongoing restoration
-    cancelAnimationFrame(animationId);
-    animationId = null;
+        const columns = getColumnCount();
 
-    // Restore normal canvas coordinate system
-    ctx.setTransform(
-      currentDpr, 0,
-      0, currentDpr,
-      0, 0
-    );
-
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
-
-    drawing = true;
-    lastPoint = getPosition(e);
-
-    canvas.setPointerCapture(e.pointerId);
-
-    // Start erasing immediately
-    eraseLine(lastPoint, lastPoint);
-  }
-
-  function pointerMove(e) {
-
-    if (!drawing) return;
-
-    e.preventDefault();
-
-    // Use all available intermediate pointer positions
-    const events = e.getCoalescedEvents
-      ? e.getCoalescedEvents()
-      : [e];
-
-    for (const event of events) {
-
-      const currentPoint = getPosition(event);
-
-      eraseLine(lastPoint, currentPoint);
-
-      lastPoint = currentPoint;
+        if (columns !== currentColumns) {
+          syncCardCount();
+        } else {
+          board.querySelectorAll(".card").forEach(card => {
+            if (card.refreshCanvasSize) {
+              card.refreshCanvasSize();
+            }
+          });
+        }
+      });
     }
-  }
 
-  function pointerUp(e) {
+    newRoundButton.addEventListener("click", newRound);
+    window.addEventListener("resize", handleResize);
 
-    if (!drawing) return;
-
-    drawing = false;
-    lastPoint = null;
-
-    // Start the 5-second timer after releasing the mouse
-    timer = setTimeout(() => {
-      restoreCover();
-    }, 3000);
-  }
-
-  canvas.addEventListener("pointerdown", pointerDown);
-  canvas.addEventListener("pointermove", pointerMove);
-  canvas.addEventListener("pointerup", pointerUp);
-  canvas.addEventListener("pointercancel", pointerUp);
-
-  // Observe actual card dimensions
-  const observer = new ResizeObserver(() => {
-
-    if (!card.isConnected) return;
-
-    const rect = card.getBoundingClientRect();
-
-    if (rect.width <= 0 || rect.height <= 0) return;
-
-    const expectedWidth = Math.round(
-      rect.width * (window.devicePixelRatio || 1)
-    );
-
-    const expectedHeight = Math.round(
-      rect.height * (window.devicePixelRatio || 1)
-    );
-
-    // Only redraw when actual canvas dimensions change
-    if (
-      canvas.width !== expectedWidth ||
-      canvas.height !== expectedHeight
-    ) {
-
-      clearTimeout(timer);
-      cancelAnimationFrame(animationId);
-
-      animationId = null;
-      drawing = false;
-      lastPoint = null;
-
-      drawCover();
-    }
-  });
-
-  observer.observe(card);
-
-  // Initialize only after card is attached to the document
-  card.initialize = function() {
-    drawCover();
-  };
-
-  return card;
-}
-
-// Generate a new round
-function newRound() {
-  const board = document.getElementById("board");
-  board.innerHTML = "";
-
-  const columns = window.innerWidth <= 480
-    ? 1
-    : window.innerWidth <= 750
-      ? 2
-      : 3;
-
-  const rows = 3;
-  const cardsCount = columns * rows;
-
-  const selected = shuffle(words).slice(0, cardsCount);
-
-  selected.forEach(([uk, en]) => {
-    const card = createCard(uk, en);
-    board.appendChild(card);
-    card.initialize();
-  });
-}
-
-// Start
-newRound();
-
-</script>
+    // Start
+    newRound();
+  </script>
 
 </body>
 </html>
