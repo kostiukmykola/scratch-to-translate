@@ -55,16 +55,25 @@ button:hover {
 }
 
 #board {
-  max-width: 1200px;
-  min-height: 570px;
-  margin: 20px auto 50px;
-  padding: 30px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
   justify-content: center;
-  align-content: center;
-  align-items: center;
-  gap: 35px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 750px) {
+  #board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  #board {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card {
@@ -615,22 +624,23 @@ function createCard(ukrainian, english) {
 
 // Generate a new round
 function newRound() {
-
   const board = document.getElementById("board");
-
   board.innerHTML = "";
 
-  // Select 9 random words
-  const selected = shuffle(words).slice(0, 9);
+  const columns = window.innerWidth <= 480
+    ? 1
+    : window.innerWidth <= 750
+      ? 2
+      : 3;
+
+  const rows = 3;
+  const cardsCount = columns * rows;
+
+  const selected = shuffle(words).slice(0, cardsCount);
 
   selected.forEach(([uk, en]) => {
-
     const card = createCard(uk, en);
-
-    // First attach the card to the page
     board.appendChild(card);
-
-    // Then initialize its canvas
     card.initialize();
   });
 }
